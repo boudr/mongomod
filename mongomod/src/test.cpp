@@ -5,7 +5,7 @@
 #include <iostream>
 #include "mongo/client/dbclient.h" // for the driver
 
-using namespace GarrysMod::Lua
+using namespace GarrysMod::Lua;
 
 void run() {
   mongo::DBClientConnection c;
