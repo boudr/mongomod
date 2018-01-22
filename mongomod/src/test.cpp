@@ -1,17 +1,31 @@
 #include "GarrysMod/Lua/Interface.h"
 #include <stdio.h>
 
-using namespace GarrysMod::Lua;
+#include <cstdlib>
+#include <iostream>
+#include "mongo/client/dbclient.h" // for the driver
 
-/*
+using namespace GarrysMod::Lua
 
-require( "example" );
+void run() {
+  mongo::DBClientConnection c;
+  c.connect("localhost");
+}
 
-MsgN( TestFunction() );
+int init( lua_State* state ) {
+    mongo::client::initialize();
 
-MsgN( TestFunction( 24.75 ) );
-
-*/
+    char strOut[512]
+    try {
+        run();
+        sprintf(strOut, "connected ok")
+        LUA->PushString(strOut)
+    } catch( const mongo::DBException &e ) {
+        sprintf(strOut, "caught exception")
+        LUA->PushString(strOut)
+    }
+    return 1;
+}
 
 int MyExampleFunction( lua_State* state )
 {
