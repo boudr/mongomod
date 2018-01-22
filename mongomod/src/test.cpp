@@ -18,11 +18,11 @@ int init( lua_State* state ) {
     char strOut[512]
     try {
         run();
-        sprintf(strOut, "connected ok")
-        LUA->PushString(strOut)
+        sprintf(strOut, "connected ok");
+        LUA->PushString(strOut);
     } catch( const mongo::DBException &e ) {
-        sprintf(strOut, "caught exception")
-        LUA->PushString(strOut)
+        sprintf(strOut, "caught exception");
+        LUA->PushString(strOut);
     }
     return 1;
 }
@@ -54,7 +54,9 @@ GMOD_MODULE_OPEN()
     LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB );   // Push global table
     LUA->PushString( "TestFunction" );                  // Push Name
     LUA->PushCFunction( MyExampleFunction );            // Push function
-    LUA->SetTable( -3 );                                // Set the table 
+    LUA->PushString( "MongoInit" );
+    LUA->PushCFunction( init );
+    LUA->SetTable( -5 );                                // Set the table 
 
     return 0;
 }
