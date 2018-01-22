@@ -15,7 +15,7 @@ void run() {
 int init( lua_State* state ) {
     mongo::client::initialize();
 
-    char strOut[512]
+    char strOut[512];
     try {
         run();
         sprintf(strOut, "connected ok");
