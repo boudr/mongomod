@@ -13,6 +13,9 @@ void run() {
 }
 
 int init( lua_State* state ) {
+
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
+
     mongo::client::initialize();
 
     char strOut[512];
@@ -29,6 +32,7 @@ int init( lua_State* state ) {
 
 int MyExampleFunction( lua_State* state )
 {
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
     if ( LUA->IsType( 1, Type::NUMBER ) )
     {
         char strOut[512];
