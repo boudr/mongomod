@@ -17,8 +17,9 @@ If you choose to build this yourself; please see the prerequisites section below
 #### Build
 To build this, you will need the following packages compiled/installed for i386 architecture.
 
-* Boost
-* OpenSSL
+* Boost (libboost-all-dev)
+* OpenSSL (libssl-dev)
+* SASL - libsasl-dev (If you choose to enable support)
 * mongo-cxx-client legacy driver(http://mongodb.github.io/mongo-cxx-driver/legacy-v1/installation/)
 
 
