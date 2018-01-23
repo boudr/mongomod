@@ -18,9 +18,7 @@ Warning: I have not built this for windows and do not intend to. If you are runn
 
 Note: I am currently building and testing this against the Ubuntu environment. MMV..
 
-Some Don'ts:
-* DO NOT run this module with a dockerized server. For some reason, it doesn't play nice with boost.
-* DO NOT run this module on a 64 bit server UNLESS you know what you are doing with packages and have the correct libboost-all-dev packages installed.
+DO NOT run this module on a 64 bit server UNLESS you know what you are doing with packages and have the correct libboost-all-dev packages installed.
 
 Steps:
 * Step 1: Download the libmongoclient.so and gmsv_mongomod_linux.dll
