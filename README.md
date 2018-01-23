@@ -24,7 +24,7 @@ Some Don'ts:
 
 Steps:
 * Step 1: Download the libmongoclient.so and gmsv_mongomod_linux.dll
-* Step 2: sudo apt-get install libboost-all-dev OR sudo apt-get install libboost-all-dev:i386 (Use the latter for x64 systems)
+* Step 2: sudo apt-get install libboost-all-dev OR sudo apt-get install libboost-all-dev:i386 (Boost 1.58.0 is required)
 * Step 3: Place the libmongoclient.so is the root of the steamapps folder. (Same place as srcds_run)
 * Step 4: Place the gmsv_mongomod_linux.dll in the garrysmod/lua/bin folder.
 * Step 5: Profit
