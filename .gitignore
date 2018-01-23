@@ -2,4 +2,5 @@ build/
 data/
 .DS_Store
 docker/data/
-docker/module/
+docker/css/
+docker/garrysmod/
