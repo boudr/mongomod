@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#DO NOT MAKE THIS INTERNET FACING OTHERWISE YOU WILL EXPOSE THE DB WITH DEFAILT CREDENTIALS.
+#DO NOT MAKE THIS INTERNET FACING OTHERWISE YOU WILL EXPOSE THE DB WITH DEFAULT/NO CREDENTIALS.
 #THIS IS FOR TESTING ONLY
 
 #This will not run in detached mode for debugging. Please feel free to remove -it and add -d for detached execution
