@@ -9,7 +9,7 @@ using namespace GarrysMod::Lua;
 
 void run() {
   mongo::DBClientConnection c;
-  c.connect("localhost");
+  c.connect("10.0.0.30");
 }
 
 int init( lua_State* state ) {
@@ -58,9 +58,12 @@ GMOD_MODULE_OPEN()
     LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB );   // Push global table
     LUA->PushString( "TestFunction" );                  // Push Name
     LUA->PushCFunction( MyExampleFunction );            // Push function
+    LUA->SetTable(-3)
+
+    LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB )
     LUA->PushString( "MongoInit" );
     LUA->PushCFunction( init );
-    LUA->SetTable( -5 );                                // Set the table 
+    LUA->SetTable( -3 );                                // Set the table 
 
     return 0;
 }
