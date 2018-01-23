@@ -1,4 +1,5 @@
 build/
 data/
 .DS_Store
-module/*
+docker/data/
+docker/module/

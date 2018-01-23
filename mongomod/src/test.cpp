@@ -1,20 +1,38 @@
 #include "GarrysMod/Lua/Interface.h"
 #include <stdio.h>
 
+#include <cstdlib>
+#include <iostream>
+#include "mongo/client/dbclient.h" // for the driver
+
 using namespace GarrysMod::Lua;
 
-/*
+void run() {
+  mongo::DBClientConnection c;
+  c.connect("localhost");
+}
 
-require( "example" );
+int init( lua_State* state ) {
 
-MsgN( TestFunction() );
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
-MsgN( TestFunction( 24.75 ) );
+    mongo::client::initialize();
 
-*/
+    char strOut[512];
+    try {
+        run();
+        sprintf(strOut, "connected ok");
+        LUA->PushString(strOut);
+    } catch( const mongo::DBException &e ) {
+        sprintf(strOut, "caught exception");
+        LUA->PushString(strOut);
+    }
+    return 1;
+}
 
 int MyExampleFunction( lua_State* state )
 {
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
     if ( LUA->IsType( 1, Type::NUMBER ) )
     {
         char strOut[512];
@@ -40,7 +58,9 @@ GMOD_MODULE_OPEN()
     LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB );   // Push global table
     LUA->PushString( "TestFunction" );                  // Push Name
     LUA->PushCFunction( MyExampleFunction );            // Push function
-    LUA->SetTable( -3 );                                // Set the table 
+    LUA->PushString( "MongoInit" );
+    LUA->PushCFunction( init );
+    LUA->SetTable( -5 );                                // Set the table 
 
     return 0;
 }

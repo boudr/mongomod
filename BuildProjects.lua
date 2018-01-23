@@ -6,12 +6,13 @@ solution "mongomod"
 	targetdir ( "lib/" .. os.get() .. "/" )
 	includedirs {	"mongocxx/include/",
 					"gmodlua/include/",
-					"mongomod/include/"
+					"mongomod/include/",
+					"boost/include/"
 				 }
 
 	if os.get() == "macosx" or os.get() == "linux" then
 
-		buildoptions{ "-std=c++11 -fPIC -m32" }
+		buildoptions{ "-std=c++11 -fPIC" }
 		linkoptions{ "-fPIC -static-libstdc++" }
 
 	end
@@ -43,7 +44,7 @@ solution "mongomod"
 		defines{ "GMMODULE" }
 		files{ "mongomod/src/**.*", "mongomod/include/**.*" }
 		kind "SharedLib"
-		libdirs { "mongocxx/lib/" }
+		libdirs { "mongocxx/lib/", "boost/lib/" }
 		local platform
 		if os.get() == "windows" then
 			error "Unsupported platform."
