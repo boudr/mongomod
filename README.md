@@ -8,7 +8,7 @@ This binary module will enable a Garry's Mod NoSQL option.
 
 Please see the release section for the redistribution packages for your respective operating system.
 
-Releases: https://git.globius.org/cee/mongomod-build/tags
+Releases: https://github.com/ceeit0/mongomod/releases
 
 If you choose to build this yourself; please see the installation section below.
 
@@ -17,8 +17,6 @@ If you choose to build this yourself; please see the installation section below.
 Warning: I have not built this for windows and do not intend to. If you are running a windows server, please contact me and I will attempt to work it out.
 
 Note: I am currently building and testing this against the Ubuntu environment. MMV..
-
-DO NOT run this module on a 64 bit server UNLESS you know what you are doing with packages and have the correct libboost-all-dev packages installed.
 
 Steps:
 * Step 1: Download the libmongoclient.so and gmsv_mongomod_linux.dll
