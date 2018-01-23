@@ -16,19 +16,19 @@
 #pragma once
 
 // Define to 1 if SSL support is enabled
-#define MONGO_SSL 1
+// #undef MONGO_SSL
 
 // Define to 1 if SASL support is enabled
-#define MONGO_SASL 1
+// #undef MONGO_SASL
 
 // Define to 1 if unistd.h is available
 #define MONGO_HAVE_HEADER_UNISTD_H 1
 
 // Define to 1 if C++11 <atomic> is available
-// #undef MONGO_HAVE_CXX11_ATOMICS
+#define MONGO_HAVE_CXX11_ATOMICS 1
 
 // Define to 1 if GCC style __atomic functions are available
-#define MONGO_HAVE_GCC_ATOMIC_BUILTINS 1
+// #undef MONGO_HAVE_GCC_ATOMIC_BUILTINS
 
 // Define to 1 if GCC style __sync functions are available
 // #undef MONGO_HAVE_GCC_SYNC_BUILTINS
@@ -37,8 +37,8 @@
 #define MONGO_BYTE_ORDER 1234
 
 // Define to 1 if std::is_trivially_copyable is supported
-// #undef MONGO_HAVE_STD_IS_TRIVIALLY_COPYABLE
+#define MONGO_HAVE_STD_IS_TRIVIALLY_COPYABLE 1
 
 // Define to 1 if this platform provides the strnlen(3) function
-#define MONGO_HAVE_STRNLEN 1
+// #undef MONGO_HAVE_STRNLEN
 
