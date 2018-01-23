@@ -11,7 +11,7 @@ solution "mongomod"
 
 	if os.get() == "macosx" or os.get() == "linux" then
 
-		buildoptions{ "-std=c++11 -fPIC -m32" }
+		buildoptions{ "-std=c++11 -fPIC" }
 		linkoptions{ "-fPIC -static-libstdc++" }
 
 	end

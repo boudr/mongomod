@@ -10,6 +10,8 @@ Will eventually support direct table/player data saving without the use of query
 
 Please see the release section for the redistribution packages for your respective operating system.
 
+Releases: https://git.globius.org/cee/mongomod-build/tags
+
 If you choose to build this yourself; please see the prerequisites section below.
 
 ### Prerequisites 
