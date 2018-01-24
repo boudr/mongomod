@@ -31,8 +31,7 @@ int init( lua_State* state ) {
     return 1;
 }
 
-int MyExampleFunction( lua_State* state )
-{
+int MyExampleFunction( lua_State* state ){
     GarrysMod::Lua::ILuaBase* LUA = state->luabase;
     if ( LUA->IsType( 1, Type::NUMBER ) )
     {
@@ -47,32 +46,26 @@ int MyExampleFunction( lua_State* state )
     return 1;
 }
 
+GMOD_MODULE_OPEN(){
 
-//
-// Called when you module is opened
-//
-GMOD_MODULE_OPEN()
-{
-    //
-    // Set Global[ "TextFunction" ] = MyExampleFunction
-    //
-    LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB );   // Push global table
-    LUA->PushString( "TestFunction" );                  // Push Name
-    LUA->PushCFunction( MyExampleFunction );            // Push function
-    LUA->SetTable(-3);
+    //Push Global table onto the stack -1
+    LUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
+    {
+        //Create table -2
+        LUA->CreateTable();
+        {
+            //Push Function onto the table -3 (POP AFTER)
+            LUA->PushCFunction(init);
+            LUA->SetField(-3, "initialize");
+            LUA->PushCFunction(MyExampleFunction)
+            LUA->SetField(-3, "example")
+        }
+        LUA->SetField(-2, "mongo")
+    }
 
-    LUA->PushSpecial( GarrysMod::Lua::SPECIAL_GLOB );
-    LUA->PushString( "MongoInit" );
-    LUA->PushCFunction( init );
-    LUA->SetTable( -3 );                                // Set the table 
-
-    return 0;
+    LUA->Pop(1)
 }
 
-//
-// Called when your module is closed
-//
-GMOD_MODULE_CLOSE()
-{
+GMOD_MODULE_CLOSE(){
     return 0;
 }
