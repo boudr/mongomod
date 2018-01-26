@@ -12,35 +12,23 @@ private:
 	mongo::DBClientConnection dbc;
 	std::string workingCollection;
 
-	std::string password;
-	std::string username;
-	std::string port;
-	std::string ip;
+	const char* ip;
 public:
-	Connection(const char* ip, const char* port);
 	Connection(const char* ip);
 	~Connection();
 	int Insert(const char* collection);
 };
 
-//Needs to include credentials later..
-Connection::Connection(const char* ip, const char* port){
-
-	try{
-		dbc.connect(ip);
-		printf("Connection ok to, %s\n", (this->ip + ":" + this->port).c_str());
-	}catch(const mongo::DBException &e){
-		printf("Caught Exception: %s\n", e.toString().c_str());
-	}
-}
-//Needs to include credentials later..
+//Needs to include credentials later as well as port
 Connection::Connection(const char* ip){
 
+	this->ip = ip;
+
 	try{
-		dbc.connect(ip);
-		printf("Connection ok to, %s\n", (this->ip).c_str());
+		dbc.connect(this->ip);
+		printf("\nConnection ok to %s\n", this->ip);
 	}catch(const mongo::DBException &e){
-		printf("Caught Exception: %s\n", e.toString().c_str());
+		printf("\nCaught Exception: %s\n", e.toString().c_str());
 	}
 }
 
@@ -57,8 +45,6 @@ int Connection::Insert(const char* collection){ //Needs to also take the table.
 	b.append("key", "value");
 
 	BSONObj p = b.obj();
-
-	printf("Insert call: %s\n", collection);
 
 	this->dbc.insert(collection, p);
 

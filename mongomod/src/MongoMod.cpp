@@ -5,6 +5,10 @@ using namespace GarrysMod::Lua;
 using mongo::BSONObjBuilder;
 using mongo::BSONObj;
 
+#define CONNECTION "Connection"
+
+int ConTypeID;
+
 int MyExampleFunction( lua_State* state ){
     GarrysMod::Lua::ILuaBase* LUA = state->luabase;
     if ( LUA->IsType( 1, Type::NUMBER ) )
@@ -21,72 +25,69 @@ int MyExampleFunction( lua_State* state ){
 }
 
 /*
-function insert(collection, table)
---Collection: The name of the collection to store into ("gmod.players")
---Table: Table to store (local tab = {})
+function mongo.connect(ipandport)
+Returns: Userdata with type CONNECTION
 
-Example:
-    Mongo.insert("gmod", "random", {[1]="Hello, ", [2]="World!"})
+Example: local db = mongo.connect("10.0.0.30:27017")
 */
 int Connect( lua_State* state ){
 
     GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
-    LUA->CheckString(1);
-    LUA->CheckString(2);
-    LUA->CheckString(3);
+    LUA->CheckString(1); //-1
 
-    printf("Lua Call: %s\n",LUA->GetString(-1) );
+    Connection* c = new Connection(LUA->GetString(-1));
 
-    Connection* c = new Connection(LUA->GetString(-3), LUA->GetString(-2));
+    LUA->Pop();
 
-    c->Insert(LUA->GetString(-1));
+    //Push UserType connection and the connection object to the stack.
+    LUA->PushUserType(c, ConTypeID);
 
-    LUA->Pop(3);
+    return 1;
+}
+
+//Garbage collection deconstructor
+int Disconnect( lua_State* state ){
+
+    if(!ConTypeID){
+        printf("\nConnection Type Metatable not initialized!\n");
+        return 0;
+    }
+
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
+
+    LUA->CheckType(1, ConTypeID);
+
+    ILuaBase::UserData* userdata = (ILuaBase::UserData*) LUA->GetUserdata(1);
+    Connection* c = (Connection*)userdata->data;
 
     delete c;
 
     return 0;
+}
 
-    // GarrysMod::Lua::ILuaBase* LUA = state->luabase;
+int Insert(lua_State* state){
 
-    // mongo::client::initialize();
+    if(!ConTypeID){
+        printf("\nConnection Type Metatable not initialized!\n");
+        return 0;
+    }
 
-    // mongo::DBClientConnection dbcon;
+    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
-    // try {
-    //     dbcon.connect("10.0.0.30");
-    //     printf("Did this work?\n");
-    // } catch( const mongo::DBException &e ) {
-    //     printf("Connection could not be made..\n")
-    //     return 0;
-    // }
+    LUA->CheckType(1, ConTypeID);
 
-    // LUA->CheckType(1, Type::TABLE); // -1
+    ILuaBase::UserData* userdata = (ILuaBase::UserData*) LUA->GetUserdata(1);
+    Connection* c = (Connection*)userdata->data;
 
-    // BSONObjBuilder b;
+    if(!c){
+        printf("\nThis inserting didn't work.\n");
+        return 0;
+    }
 
-    // b.genOID();
+    c->Insert("this.isworking");
 
-    // int j = 1;
-
-    // //Key: -2 ; Value: -1
-    // for(LUA->PushNil(); LUA->Next(-2); LUA->Pop()){
-    //     if(LUA->IsType(-1, Type::STRING)){
-
-    //         const char* element = LUA->GetString(-1);
-
-    //         const std::string buffer(element);
-
-    //         b.append(buffer, buffer);
-    //     }
-    // }
-
-    // BSONObj p = b.obj();
-
-    // dbcon.insert("gmod.test", p);
-
-    // return 0;
+    return 0;
 }
 
 
@@ -106,7 +107,24 @@ GMOD_MODULE_OPEN(){
             LUA->PushCFunction(Connect);
             LUA->SetField(-2, "connect");
         }
-        LUA->SetField(-2, "Mongo");
+        LUA->SetField(-2, "mongo");
+    }
+
+    LUA->Pop();
+
+    //Meta table for connection userdata
+    ConTypeID = LUA->CreateMetaTable(CONNECTION);
+    {
+        //Table index
+        LUA->Push(-1);
+        LUA->SetField(-2, "__index");
+
+        //Attach disconnection function to garbage collection
+        LUA->PushCFunction(Disconnect);
+        LUA->SetField(-2, "__gc");
+
+        LUA->PushCFunction(Insert);
+        LUA->SetField(-2, "insert");
     }
 
     LUA->Pop();
@@ -115,6 +133,5 @@ GMOD_MODULE_OPEN(){
 }
 
 GMOD_MODULE_CLOSE(){
-
     return 0;
 }
