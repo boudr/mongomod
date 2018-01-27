@@ -7,22 +7,8 @@ using mongo::BSONObj;
 
 #define CONNECTION "Connection"
 
+//Connection iType ID. Returned from created the new meta table of type CONNECTION
 int ConTypeID;
-
-int MyExampleFunction( lua_State* state ){
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
-    if ( LUA->IsType( 1, Type::NUMBER ) )
-    {
-        char strOut[512];
-        float fNumber = LUA->GetNumber( 1 );
-        sprintf( strOut, "Thanks for the number - I love %f!!", fNumber );
-        LUA->PushString( strOut );
-        return 1;
-    }
-
-    LUA->PushString( "This string is returned" );
-    return 1;
-}
 
 /*
 function mongo.connect(ipandport)
@@ -34,9 +20,9 @@ int Connect( lua_State* state ){
 
     GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
-    LUA->CheckString(1); //-1
+    LUA->CheckString(1);
 
-    Connection* c = new Connection(LUA->GetString(-1));
+    Connection* c = new Connection(LUA->GetString(1));
 
     LUA->Pop();
 
@@ -50,7 +36,7 @@ int Connect( lua_State* state ){
 int Disconnect( lua_State* state ){
 
     if(!ConTypeID){
-        printf("\nConnection Type Metatable not initialized!\n");
+        printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
 
@@ -69,7 +55,7 @@ int Disconnect( lua_State* state ){
 int Insert(lua_State* state){
 
     if(!ConTypeID){
-        printf("\nConnection Type Metatable not initialized!\n");
+        printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
 
@@ -81,18 +67,50 @@ int Insert(lua_State* state){
     Connection* c = (Connection*)userdata->data;
 
     if(!c){
-        printf("\nThis inserting didn't work.\n");
+        printf("\n[MongoMod] ERROR: Connection is invalid! Unable to insert requested data.\n");
         return 0;
     }
 
-    c->Insert("this.isworking");
+    LUA->CheckString(2);
 
-    return 0;
+    const char* collection = LUA->GetString(2);
+
+    BSONObjBuilder builder;
+
+    builder.genOID();
+
+    LUA->CheckType(3, Type::TABLE);
+
+    for(LUA->PushNil(); LUA->Next(3); LUA->Pop()){
+        if(LUA->IsType(-1, Type::BOOL)){
+            bool lbool= LUA->GetBool(-1);
+            builder.append(LUA->GetString(-2), lbool);
+            continue;
+        }else if(LUA->IsType(-1, Type::NUMBER)){
+            double lnum = LUA->GetNumber(-1);
+            builder.append(LUA->GetString(-2), lnum);
+            continue;
+        }else{
+            builder.append(LUA->GetString(-2), LUA->GetString(-1));
+        }
+    }
+
+    //This doesn't work... :(
+    //+2 for the additional '.' character
+    char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
+    strcpy(final, c->GetActiveDatabase());
+    strcat(final, ".");
+    strcat(final, collection);
+
+    printf("\n%s\n", final);
+
+    c->Insert(final, builder.obj());
 }
 
 
 GMOD_MODULE_OPEN(){
 
+    //Initialize the mongo client
     mongo::client::initialize();
 
     //Push Global table onto the stack -1
@@ -101,9 +119,7 @@ GMOD_MODULE_OPEN(){
         //Create table -2
         LUA->CreateTable();
         {
-            //Push Function onto the table -3 (POP AFTER)
-            LUA->PushCFunction(MyExampleFunction);
-            LUA->SetField(-2, "example");
+            //Push Function onto the table -3 (POP AFTER);
             LUA->PushCFunction(Connect);
             LUA->SetField(-2, "connect");
         }
@@ -123,6 +139,7 @@ GMOD_MODULE_OPEN(){
         LUA->PushCFunction(Disconnect);
         LUA->SetField(-2, "__gc");
 
+        //Insert Function
         LUA->PushCFunction(Insert);
         LUA->SetField(-2, "insert");
     }
@@ -133,5 +150,8 @@ GMOD_MODULE_OPEN(){
 }
 
 GMOD_MODULE_CLOSE(){
+
+    ConTypeID = -1;
+
     return 0;
 }

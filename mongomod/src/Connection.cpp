@@ -3,9 +3,11 @@
 #include <cstdlib>
 
 #include "mongo/bson/bson.h"
+#include "GarrysMod/Lua/Interface.h"
 
 using mongo::BSONObjBuilder;
 using mongo::BSONObj;
+using namespace GarrysMod::Lua;
 
 class Connection {
 private:
@@ -13,10 +15,14 @@ private:
 	std::string workingCollection;
 
 	const char* ip;
+	const char* database = "garrysmod";
 public:
+
 	Connection(const char* ip);
 	~Connection();
-	int Insert(const char* collection);
+
+	const char* GetActiveDatabase();
+	void Insert(char* collection, BSONObj b);
 };
 
 //Needs to include credentials later as well as port
@@ -36,19 +42,13 @@ Connection::~Connection(){
 	
 }
 
-int Connection::Insert(const char* collection){ //Needs to also take the table.
+void Connection::Insert(char* collection, BSONObj b){
+	this->dbc.insert(collection, b);
+}
 
-	BSONObjBuilder b;
-
-	b.genOID();
-
-	b.append("key", "value");
-
-	BSONObj p = b.obj();
-
-	this->dbc.insert(collection, p);
-
-	return 1;
-} 
+const char* Connection::GetActiveDatabase(){
+	return this->database;
+}
 // int Get(std::string collection, std::string key);
 // void SetWorkingCollection(std::string collection);
+// int SetWorkingCollection(std::string collection);
