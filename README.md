@@ -26,4 +26,13 @@ Steps:
 * Step 5: Profit
 
 ## Available Functions
-Coming soon to a town near you!
+
+Connect:
+```lua
+local database = mongo.connect("localhost:27017")
+```
+Insert a new collection:
+```lua
+database:insert("collectionName", {this = "Is", a = "Table", yes = true, wow = 1})
+```
+
