@@ -95,7 +95,6 @@ int Insert(lua_State* state){
         }
     }
 
-    //This doesn't work... :(
     //+2 for the additional '.' character
     char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
     strcpy(final, c->GetActiveDatabase());
