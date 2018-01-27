@@ -6,4 +6,4 @@
 #include "mongo/client/dbclient.h" // for the driver
 #include "mongo/bson/bson.h"
 
-#include "Connection.cpp"
+#include "Connection.h"
