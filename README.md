@@ -44,7 +44,7 @@ database:insert("collectionName", {this = "Is", a = "Table", yes = true, wow = 1
 ###Query:
 ```lua
 --Returns the table of elements found and the number of elements.
---To query conditionally, just keep adding to the table.
+--To query on multiple cases, just keep adding to the table.
 --[[
 	Example:
 	{ banned = true, name="dril" }
