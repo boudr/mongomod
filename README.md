@@ -27,21 +27,21 @@ Steps:
 
 ## Available Functions
 
-###New Database Object:
+### New Database Object:
 ```lua
 local database = mongo.new()
 ```
-###Connect:
+### Connect:
 ```lua
 --Takes IP and port combo as well as the name of the database
 mongo.connect("localhost:27017", "garrysmod")
 ```
-###Insert a new collection:
+### Insert a new collection:
 ```lua
 --ONLY use insert for new items. See the 'update' function to modify or add to existing data.
 database:insert("collectionName", {this = "Is", a = "Table", yes = true, wow = 1})
 ```
-###Query:
+### Query:
 ```lua
 --Returns the table of elements found and the number of elements.
 --To query on multiple cases, just keep adding to the table.
