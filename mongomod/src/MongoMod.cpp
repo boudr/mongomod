@@ -209,32 +209,31 @@ int Query(lua_State* state){
 
     std::vector<mongo::BSONObj> elements;
 
+    BSONObjBuilder qBuilder;
+
     for(LUA->PushNil(); LUA->Next(3) != 0; LUA->Pop()){
         if(LUA->IsType(-2, Type::STRING)){
             if(LUA->IsType(-1, Type::BOOL)){
                 bool lbool= LUA->GetBool(-1);
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lbool));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
+                qBuilder.append(LUA->GetString(-2), lbool);
                 continue;
             }else if(LUA->IsType(-1, Type::NUMBER)){
                 double lnum = LUA->GetNumber(-1);
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lnum));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
+                qBuilder.append(LUA->GetString(-2), lnum);
                 continue;
             }else{
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << LUA->GetString(-1)));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
+                qBuilder.append(LUA->GetString(-2), LUA->GetString(-1));
             }
         }
     }
 
     LUA->Pop();
+
+    std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, qBuilder.obj());
+
+    while(cursor->more()){
+        elements.push_back(cursor->next());
+    }
 
     int j = 0;
 
