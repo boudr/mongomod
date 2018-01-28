@@ -1,49 +1,31 @@
-#include "mongo/client/dbclient.h"
-#include <stdio.h>
-#include <cstdlib>
+#include "Connection.h"
 
-#include "mongo/bson/bson.h"
-#include "GarrysMod/Lua/Interface.h"
-
-using mongo::BSONObjBuilder;
-using mongo::BSONObj;
-using namespace GarrysMod::Lua;
-
-class Connection {
-private:
-	mongo::DBClientConnection dbc;
-	std::string workingCollection;
-
-	const char* ip;
-	const char* database = "garrysmod";
-public:
-
-	Connection(const char* ip);
-	~Connection();
-
-	const char* GetActiveDatabase();
-	void Insert(char* collection, BSONObj b);
-};
-
-//Needs to include credentials later as well as port
-Connection::Connection(const char* ip){
-
+bool Connection::Connect(const char* ip, const char* database){
 	this->ip = ip;
+	this->database = database;
 
 	try{
 		dbc.connect(this->ip);
-		printf("\nConnection ok to %s\n", this->ip);
-	}catch(const mongo::DBException &e){
-		printf("\nCaught Exception: %s\n", e.toString().c_str());
+	}catch(mongo::DBException &e){
+		printf("\n[MongoMod] ERROR: Connection failed .. %s\n", e.toString().c_str());
+		return false;
 	}
-}
 
-Connection::~Connection(){
-	
+	return true;
 }
 
 void Connection::Insert(char* collection, BSONObj b){
-	this->dbc.insert(collection, b);
+
+	try{
+		this->dbc.insert(collection, b);
+	}catch(mongo::DBException &e){
+		printf("\n[MongoMod] ERROR: Unable to insert new data .. %s\n", e.toString().c_str());
+	}
+}
+
+//Need to handle exception for this...
+std::auto_ptr<mongo::DBClientCursor> Connection::Query(const char* collection, mongo::Query q){
+	return this->dbc.query(collection, q);
 }
 
 const char* Connection::GetActiveDatabase(){
