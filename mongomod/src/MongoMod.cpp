@@ -7,6 +7,19 @@ using mongo::BSONObj;
 
 #define CONNECTION "Connection"
 
+// //For debugging
+// void stackdump_type(lua_State* state){
+
+//     ILuaBase* LUA = state->luabase;
+
+//     int i;
+//     int top = LUA->Top();
+
+//     for(i = 0; i < top; i++){
+//         printf("\n%s\n", LUA->GetTypeName(i));
+//     }
+// }
+
 //Connection iType ID. Returned from created the new meta table of type CONNECTION
 int ConTypeID;
 
@@ -159,8 +172,11 @@ int Insert(lua_State* state){
     printf("\n%s\n", final);
 
     c->Insert(final, builder.obj());
+
+    return 0;
 }
 
+//Function needs to return two things, the table holding all found elements and the number of total tables returned.
 int Query(lua_State* state){
 
     if(!ConTypeID){
@@ -184,39 +200,81 @@ int Query(lua_State* state){
 
     const char* collection = LUA->GetString(2);
 
+    char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
+    strcpy(final, c->GetActiveDatabase());
+    strcat(final, ".");
+    strcat(final, collection);
+
     LUA->CheckType(3, Type::TABLE);
+
+    std::vector<mongo::BSONObj> elements;
 
     for(LUA->PushNil(); LUA->Next(3) != 0; LUA->Pop()){
         if(LUA->IsType(-2, Type::STRING)){
-            // if(LUA->IsType(-1, Type::BOOL)){
-            //     bool lbool= LUA->GetBool(-1);
-
-
-            //     continue;
-            // }else if(LUA->IsType(-1, Type::NUMBER)){
-            //     double lnum = LUA->GetNumber(-1);
-
-
-            //     continue;
-            // }else{
-                
-            // }
-
-            //+2 for the additional '.' character
-            char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
-            strcpy(final, c->GetActiveDatabase());
-            strcat(final, ".");
-            strcat(final, collection);
-
-            printf("\n%s\n", LUA->GetString(-2));
-            printf("\n%s\n", LUA->GetString(-1));
-
-            std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << LUA->GetNumber(-1)));
-            while(cursor->more()){
-                std::cout << cursor->next().toString() << std::endl;
+            if(LUA->IsType(-1, Type::BOOL)){
+                bool lbool= LUA->GetBool(-1);
+                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lbool));
+                while(cursor->more()){
+                    elements.push_back(cursor->next());
+                }
+                continue;
+            }else if(LUA->IsType(-1, Type::NUMBER)){
+                double lnum = LUA->GetNumber(-1);
+                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lnum));
+                while(cursor->more()){
+                    elements.push_back(cursor->next());
+                }
+                continue;
+            }else{
+                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << LUA->GetString(-1)));
+                while(cursor->more()){
+                    elements.push_back(cursor->next());
+                }
             }
         }
     }
+
+    LUA->Pop();
+
+    int j = 0;
+
+    //-1
+    LUA->CreateTable();
+    {
+        //Pull all the BSONObjs
+        for(std::vector<mongo::BSONObj>::iterator it = elements.begin(); it != elements.end(); it++){
+
+            std::vector<const char*> fieldNames;
+            //Pull fields out of the objects and build a feild vector.
+            BSONObj::iterator i = it->begin();
+
+            //-2
+            LUA->CreateTable();
+            {
+                while(i.more()){
+                    mongo::BSONElement e = i.next();
+                    fieldNames.push_back(e.fieldName());
+
+                    if(e.type() == mongo::BSONType::Bool){
+                        LUA->PushBool(e.boolean());
+                        LUA->SetField(-2, e.fieldName());
+                    }else if(e.type() == mongo::BSONType::NumberDouble){
+                        LUA->PushNumber(e._numberDouble());
+                        LUA->SetField(-2, e.fieldName());
+                    }else if(e.type() == mongo::BSONType::String){
+                        LUA->PushString(e.valuestr());
+                        LUA->SetField(-2, e.fieldName());
+                    }
+                }
+            }
+            LUA->SetField(-2, std::to_string(j + 1).c_str());
+            j++;
+        }
+    }
+
+    LUA->PushNumber(j);
+
+    return 2;
 }
 
 
