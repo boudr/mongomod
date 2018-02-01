@@ -6,7 +6,7 @@ solution "mongomod"
 	targetdir ( "lib/" .. os.get() .. "/" )
 	includedirs {	"mongocxx/include/",
 					"gmodlua/include/",
-					"mongomod/include/",
+					"mongomod/src/",
 					"boost/include/"
 				 }
 
@@ -42,7 +42,7 @@ solution "mongomod"
 		end
 	project "gmsv_mongomod"
 		defines{ "GMMODULE" }
-		files{ "mongomod/src/**.*", "mongomod/include/**.*" }
+		files{ "mongomod/src/**.*" }
 		kind "SharedLib"
 		libdirs { "mongocxx/lib/", "boost/lib/" }
 		local platform

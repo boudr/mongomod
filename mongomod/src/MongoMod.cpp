@@ -22,7 +22,8 @@ char* concatDB(const char* a, const char* b){
     return final;
 }
 
-BSONObj query_builder(ILuaBase* LUA, int iStackPos){
+//Pass a stack position for a table and this function will build a BSONObj that is query ready.
+BSONObj query_builder(ILuaBase* LUA, int iStackPos, bool update=false){
     int i = 1;
 
     BSONObjBuilder qBuilder;
@@ -40,12 +41,15 @@ BSONObj query_builder(ILuaBase* LUA, int iStackPos){
                 continue;
             }else if(LUA->IsType(-1, Type::STRING)){
                 qBuilder.append(LUA->GetString(-2), LUA->GetString(-1));
-                printf("\nThis is working\n");
                 i++;
                 continue;
             }else if(LUA->IsType(-1, Type::TABLE)){
                 printf("\n%s\n", LUA->GetString(-2));
-                qBuilder.appendArray(LUA->GetString(-2), query_builder(LUA, -2));
+                if(update){
+                    qBuilder.append(LUA->GetString(-2),query_builder(LUA, -2));
+                }else{
+                    qBuilder.appendArray(LUA->GetString(-2), query_builder(LUA, -2));
+                }
                 i++;
                 continue;
             }else{
@@ -67,7 +71,11 @@ BSONObj query_builder(ILuaBase* LUA, int iStackPos){
                 i++;
                 continue;
             }else if(LUA->IsType(-1, Type::TABLE)){
-                qBuilder.appendArray(std::to_string(i).c_str(), query_builder(LUA, -2));
+                if(update){
+                    printf("\n[MongoMod] ERROR: Key to second table MUST be an Update Operator!\n");
+                }else{
+                    qBuilder.appendArray(LUA->GetString(-2), query_builder(LUA, -2));
+                }
                 i++;
                 continue;
             }else{
@@ -138,9 +146,6 @@ int lua_table_builder(ILuaBase* LUA, std::vector<BSONObj>* elements){
                         LUA->PushString(e.valuestr());
                         LUA->SetField(-2, e.fieldName());
                     }else if(e.type() == mongo::BSONType::Array){
-                        //WARNING: At the moment this will cause a stack overflow and crash the server
-                        //Need to pop the elements off the elements table before calling this otherwise this will loop forever...
-                        //elements->pop_back() segfaults.
 
                         BSONObj newObject = (BSONObj)e.embeddedObject();
 
@@ -153,8 +158,6 @@ int lua_table_builder(ILuaBase* LUA, std::vector<BSONObj>* elements){
             j++;
         }
     }
-
-    /* LUA->SetField(-2, std::to_string(subIndex).c_str()); */
 
     return j;
 }
@@ -307,6 +310,41 @@ LUA_FUNCTION( Query ){
 }
 
 LUA_FUNCTION(Update){
+    if(!ConTypeID){
+        printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
+        return 0;
+    }
+
+    LUA->CheckType(1, ConTypeID);
+
+    ILuaBase::UserData* userdata = (ILuaBase::UserData*) LUA->GetUserdata(1);
+    Connection* c = (Connection*)userdata->data;
+
+    if(!c){
+        printf("\n[MongoMod] ERROR: Connection is invalid! Unable to query on requested database.\n");
+        return 0;
+    }
+
+    LUA->CheckString(2);
+
+    const char* collection = LUA->GetString(2);
+
+    char* final = concatDB(c->GetActiveDatabase(), collection);
+
+    printf("\n%s\n", final);
+
+    LUA->CheckType(3, Type::TABLE);
+
+    std::vector<mongo::BSONObj> elements;
+
+    BSONObj q = query_builder(LUA, 3);
+
+    LUA->CheckType(4, Type::TABLE);
+
+    BSONObj update = query_builder(LUA, 4, true);
+
+    c->Update(final, q, update);
+
     return 0;
 }
 

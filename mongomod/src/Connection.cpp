@@ -28,6 +28,14 @@ std::auto_ptr<mongo::DBClientCursor> Connection::Query(const char* collection, m
 	return this->dbc.query(collection, q);
 }
 
+void Connection::Update(const char* collection, BSONObj q, BSONObj update){
+    try{
+        this->dbc.update(collection, q, update, false, true);
+    }catch(mongo::DBException &e){
+        printf("\n[MongoMod] ERROR: %s\n", e.toString().c_str());
+    }
+}
+
 const char* Connection::GetActiveDatabase(){
 	return this->database;
 }

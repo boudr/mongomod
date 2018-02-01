@@ -20,5 +20,6 @@ public:
 	const char* GetActiveDatabase();
 	void Insert(char* collection, BSONObj b);
 	bool Connect(const char* ip, const char* database);
+    void Update(const char* collection, BSONObj q, BSONObj update);
 	std::auto_ptr<mongo::DBClientCursor> Query(const char* collection, mongo::BSONObj q);
 };
