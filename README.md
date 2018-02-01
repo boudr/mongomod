@@ -27,6 +27,9 @@ Steps:
 
 ## Available Functions
 
+### MongoDB Resources:
+Update Conditions(https://docs.mongodb.com/manual/reference/operator/update/)
+
 ### New Database Object:
 ```lua
 local database = mongo.new()
