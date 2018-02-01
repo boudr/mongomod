@@ -24,7 +24,7 @@ void Connection::Insert(char* collection, BSONObj b){
 }
 
 //Need to handle exception for this...
-std::auto_ptr<mongo::DBClientCursor> Connection::Query(const char* collection, mongo::Query q){
+std::auto_ptr<mongo::DBClientCursor> Connection::Query(const char* collection, mongo::BSONObj q){
 	return this->dbc.query(collection, q);
 }
 

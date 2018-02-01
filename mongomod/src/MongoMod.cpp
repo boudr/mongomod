@@ -7,29 +7,164 @@ using mongo::BSONObj;
 
 #define CONNECTION "Connection"
 
-// //For debugging
-// void stackdump_type(lua_State* state){
-
-//     ILuaBase* LUA = state->luabase;
-
-//     int i;
-//     int top = LUA->Top();
-
-//     for(i = 0; i < top; i++){
-//         printf("\n%s\n", LUA->GetTypeName(i));
-//     }
-// }
-
 //Connection iType ID. Returned from created the new meta table of type CONNECTION
 int ConTypeID;
 
-int New( lua_State* state ){
+int TableScanRef;
+
+//Used to concat the database and collection into one c string
+char* concatDB(const char* a, const char* b){
+    char* final = new char[strlen(a) + strlen(b) + 2];
+    strcpy(final, a);
+    strcat(final, ".");
+    strcat(final, b);
+
+    return final;
+}
+
+BSONObj query_builder(ILuaBase* LUA, int iStackPos){
+    int i = 1;
+
+    BSONObjBuilder qBuilder;
+    for(LUA->PushNil(); LUA->Next(iStackPos) != 0; LUA->Pop()){
+        if(LUA->IsType(-2, Type::STRING)){
+            if(LUA->IsType(-1, Type::BOOL)){
+                bool lbool= LUA->GetBool(-1);
+                qBuilder.append(LUA->GetString(-2), lbool);
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::NUMBER)){
+                double lnum = LUA->GetNumber(-1);
+                qBuilder.append(LUA->GetString(-2), lnum);
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::STRING)){
+                qBuilder.append(LUA->GetString(-2), LUA->GetString(-1));
+                printf("\nThis is working\n");
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::TABLE)){
+                printf("\n%s\n", LUA->GetString(-2));
+                qBuilder.appendArray(LUA->GetString(-2), query_builder(LUA, -2));
+                i++;
+                continue;
+            }else{
+                printf("\n[MongoMod] ERROR: Datatype provided as value is not supported: %s\n", LUA->GetTypeName(-1));
+            }
+        }else if(LUA->IsType(-2, Type::NUMBER)){
+            if(LUA->IsType(-1, Type::BOOL)){
+                bool lbool= LUA->GetBool(-1);
+                qBuilder.append(std::to_string(i).c_str(), lbool);
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::NUMBER)){
+                double lnum = LUA->GetNumber(-1);
+                qBuilder.append(std::to_string(i).c_str(), lnum);
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::STRING)){
+                qBuilder.append(std::to_string(i).c_str(), LUA->GetString(-1));
+                i++;
+                continue;
+            }else if(LUA->IsType(-1, Type::TABLE)){
+                qBuilder.appendArray(std::to_string(i).c_str(), query_builder(LUA, -2));
+                i++;
+                continue;
+            }else{
+                printf("\n[MongoMod] ERROR: Datatype provided as value is not supported: %s\n", LUA->GetTypeName(-1));
+            }
+        }else{
+            printf("\n[MongoMod] ERROR: Mongomod only supports strings as key values or no key specified.\n");
+        }
+    }
+    return qBuilder.obj();
+}
+
+//Hacky workaround.
+//This is supposed to build sub tables out of a bson obj since we can't call lua_table_builder without building more vectors..
+void lua_sub_table_builder(ILuaBase* LUA, BSONObj b, const char* fieldName){
+    //Pull fields out of the objects and build a feild vector.
+    BSONObj::iterator i = b.begin();
+
+    //-2
+    LUA->CreateTable();
+    {
+        while(i.more()){
+            mongo::BSONElement e = i.next();
+            if(e.type() == mongo::BSONType::Bool){
+                LUA->PushBool(e.boolean());
+                LUA->SetField(-2, e.fieldName());
+            }else if(e.type() == mongo::BSONType::NumberDouble){
+                LUA->PushNumber(e._numberDouble());
+                LUA->SetField(-2, e.fieldName());
+            }else if(e.type() == mongo::BSONType::String){
+                LUA->PushString(e.valuestr());
+                LUA->SetField(-2, e.fieldName());
+            }else if(e.type() == mongo::BSONType::Array){
+
+                BSONObj newObject = (BSONObj)e.embeddedObject();
+
+                lua_sub_table_builder(LUA, newObject, e.fieldName());
+            }
+        }
+    }
+    LUA->SetField(-2, fieldName);
+}
+
+int lua_table_builder(ILuaBase* LUA, std::vector<BSONObj>* elements){
+
+    printf("\nValues on stack: %s\n", std::to_string(LUA->Top()).c_str());
+    int j = 0;
+    LUA->CreateTable();
+    {
+        //Pull all the BSONObjs
+        for(std::vector<mongo::BSONObj>::iterator it = elements->begin(); it != elements->end(); it++){
+
+            //Pull fields out of the objects and build a feild vector.
+            BSONObj::iterator i = it->begin();
+
+            //-2
+            LUA->CreateTable();
+            {
+                while(i.more()){
+                    mongo::BSONElement e = i.next();
+                    if(e.type() == mongo::BSONType::Bool){
+                        LUA->PushBool(e.boolean());
+                        LUA->SetField(-2, e.fieldName());
+                    }else if(e.type() == mongo::BSONType::NumberDouble){
+                        LUA->PushNumber(e._numberDouble());
+                        LUA->SetField(-2, e.fieldName());
+                    }else if(e.type() == mongo::BSONType::String){
+                        LUA->PushString(e.valuestr());
+                        LUA->SetField(-2, e.fieldName());
+                    }else if(e.type() == mongo::BSONType::Array){
+                        //WARNING: At the moment this will cause a stack overflow and crash the server
+                        //Need to pop the elements off the elements table before calling this otherwise this will loop forever...
+                        //elements->pop_back() segfaults.
+
+                        BSONObj newObject = (BSONObj)e.embeddedObject();
+
+                        lua_sub_table_builder(LUA, newObject, e.fieldName());
+
+                    }
+                }
+            }
+            LUA->SetField(-2, std::to_string(j + 1).c_str());
+            j++;
+        }
+    }
+
+    /* LUA->SetField(-2, std::to_string(subIndex).c_str()); */
+
+    return j;
+}
+
+
+LUA_FUNCTION(New){
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
-
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
     Connection* c = new Connection();
 
@@ -44,14 +179,12 @@ int New( lua_State* state ){
     return 1;
 }
 
-int Connect( lua_State* state ){
+LUA_FUNCTION(Connect){
 
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
-
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
     LUA->CheckType(1, ConTypeID);
 
@@ -73,18 +206,15 @@ int Connect( lua_State* state ){
     }
 
     return 0;
-    
 }
 
 //Garbage collection deconstructor
-int Disconnect( lua_State* state ){
+LUA_FUNCTION(Disconnect){
 
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
-
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
     LUA->CheckType(1, ConTypeID);
 
@@ -96,14 +226,12 @@ int Disconnect( lua_State* state ){
     return 0;
 }
 
-int Insert(lua_State* state){
+LUA_FUNCTION(Insert){
 
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
-
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
     LUA->CheckType(1, ConTypeID);
 
@@ -119,72 +247,27 @@ int Insert(lua_State* state){
 
     const char* collection = LUA->GetString(2);
 
-    BSONObjBuilder builder;
-
-    builder.genOID();
-
     LUA->CheckType(3, Type::TABLE);
 
-    //For element key count
-    int i = 1;
+    BSONObj b = query_builder(LUA, 3);
 
-    for(LUA->PushNil(); LUA->Next(3) != 0; LUA->Pop()){
-        if(LUA->IsType(-2, Type::NUMBER)){
-            printf("\nYes, the index is a number.\n");
-            printf("\n%s\n", LUA->GetString(-1));
-            if(LUA->IsType(-1, Type::BOOL)){
-                bool lbool= LUA->GetBool(-1);
-                builder.append(std::to_string(i).c_str(), lbool);
-                i++;
-                continue;
-            }else if(LUA->IsType(-1, Type::NUMBER)){
-                double lnum = LUA->GetNumber(-1);
-                builder.append(std::to_string(i).c_str(), lnum);
-                i++;
-                continue;
-            }else{
-                builder.append(std::to_string(i).c_str(), LUA->GetString(-1));
-            }
-        }else if(LUA->IsType(-2, Type::STRING)){
-            if(LUA->IsType(-1, Type::BOOL)){
-                bool lbool= LUA->GetBool(-1);
-                builder.append(LUA->GetString(-2), lbool);
-                i++;
-                continue;
-            }else if(LUA->IsType(-1, Type::NUMBER)){
-                double lnum = LUA->GetNumber(-1);
-                builder.append(LUA->GetString(-2), lnum);
-                i++;
-                continue;
-            }else{
-                builder.append(LUA->GetString(-2), LUA->GetString(-1));
-            }
-        }
-        i++;
-    }
+    LUA->Pop();
 
-    //+2 for the additional '.' character
-    char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
-    strcpy(final, c->GetActiveDatabase());
-    strcat(final, ".");
-    strcat(final, collection);
+    char* final = concatDB(c->GetActiveDatabase(), collection);
 
     printf("\n%s\n", final);
 
-    c->Insert(final, builder.obj());
+    c->Insert(final, b);
 
     return 0;
 }
 
-//Function needs to return two things, the table holding all found elements and the number of total tables returned.
-int Query(lua_State* state){
+LUA_FUNCTION( Query ){
 
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
         return 0;
     }
-
-    GarrysMod::Lua::ILuaBase* LUA = state->luabase;
 
     LUA->CheckType(1, ConTypeID);
 
@@ -200,81 +283,31 @@ int Query(lua_State* state){
 
     const char* collection = LUA->GetString(2);
 
-    char* final = new char[strlen(c->GetActiveDatabase()) + strlen(collection) + 2];
-    strcpy(final, c->GetActiveDatabase());
-    strcat(final, ".");
-    strcat(final, collection);
+    char* final = concatDB(c->GetActiveDatabase(), collection);
+
+    printf("\n%s\n", final);
 
     LUA->CheckType(3, Type::TABLE);
 
     std::vector<mongo::BSONObj> elements;
 
-    for(LUA->PushNil(); LUA->Next(3) != 0; LUA->Pop()){
-        if(LUA->IsType(-2, Type::STRING)){
-            if(LUA->IsType(-1, Type::BOOL)){
-                bool lbool= LUA->GetBool(-1);
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lbool));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
-                continue;
-            }else if(LUA->IsType(-1, Type::NUMBER)){
-                double lnum = LUA->GetNumber(-1);
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << lnum));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
-                continue;
-            }else{
-                std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, MONGO_QUERY(LUA->GetString(-2) << LUA->GetString(-1)));
-                while(cursor->more()){
-                    elements.push_back(cursor->next());
-                }
-            }
-        }
-    }
+    BSONObj q = query_builder(LUA, 3);
 
     LUA->Pop();
 
-    int j = 0;
+    std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, q);
 
-    //-1
-    LUA->CreateTable();
-    {
-        //Pull all the BSONObjs
-        for(std::vector<mongo::BSONObj>::iterator it = elements.begin(); it != elements.end(); it++){
-
-            std::vector<const char*> fieldNames;
-            //Pull fields out of the objects and build a feild vector.
-            BSONObj::iterator i = it->begin();
-
-            //-2
-            LUA->CreateTable();
-            {
-                while(i.more()){
-                    mongo::BSONElement e = i.next();
-                    fieldNames.push_back(e.fieldName());
-
-                    if(e.type() == mongo::BSONType::Bool){
-                        LUA->PushBool(e.boolean());
-                        LUA->SetField(-2, e.fieldName());
-                    }else if(e.type() == mongo::BSONType::NumberDouble){
-                        LUA->PushNumber(e._numberDouble());
-                        LUA->SetField(-2, e.fieldName());
-                    }else if(e.type() == mongo::BSONType::String){
-                        LUA->PushString(e.valuestr());
-                        LUA->SetField(-2, e.fieldName());
-                    }
-                }
-            }
-            LUA->SetField(-2, std::to_string(j + 1).c_str());
-            j++;
-        }
+    while(cursor->more()){
+        elements.push_back(cursor->next());
     }
 
-    LUA->PushNumber(j);
+    LUA->PushNumber(lua_table_builder(LUA, &elements));
 
     return 2;
+}
+
+LUA_FUNCTION(Update){
+    return 0;
 }
 
 
@@ -318,6 +351,9 @@ GMOD_MODULE_OPEN(){
 
         LUA->PushCFunction(Query);
         LUA->SetField(-2, "query");
+
+        LUA->PushCFunction(Update);
+        LUA->SetField(-2, "update");
     }
 
     LUA->Pop();
