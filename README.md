@@ -64,3 +64,20 @@ end
 
 PrintTable(tab)
 ```
+### Update:
+```lua
+--To update, the first table will be the same as query.
+--[[
+	Example:
+	{ banned = true, name="dril" }
+]]--
+--The second table will use MongoDB's Update conditions as the key.
+--[[
+    Example:
+    { ["$set"] = {
+        name = "crown"
+    }
+]]--
+
+database:update("players", {banned = true}, {["$set"] = {banned=false}})
+```
