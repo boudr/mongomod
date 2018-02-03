@@ -39,7 +39,7 @@ local database = mongo.new()
 ### Connect:
 ```lua
 --Takes IP and port combo as well as the name of the database
-mongo.connect("localhost:27017", "garrysmod")
+database:connect("localhost:27017", "garrysmod")
 ```
 ### Insert a new collection:
 ```lua
