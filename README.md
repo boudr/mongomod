@@ -2,6 +2,8 @@
 
 Garry's Mod Lua implementation on MongoDB (https://www.mongodb.com)
 
+Stage: Pre-Release ready for testing.
+
 ## Getting Started
 
 Please see the release section for the redistribution packages for your respective operating system.
@@ -17,10 +19,10 @@ Note: I am currently building and testing this against the Ubuntu environment. M
 
 Steps:
 * Step 1: Download the libmongoclient.so and gmsv_mongomod_linux.dll
-* Step 2: sudo apt-get install 
-- libboost-system-dev
-- libboost-thread-dev
-- libboost-regex-dev
+* Step 2: sudo apt-get install
+    - libboost-system-dev
+    - libboost-thread-dev
+    - libboost-regex-dev
 * Step 3: Place the libmongoclient.so is the root of the steamapps folder. (Same place as srcds_run)
 * Step 4: Place the gmsv_mongomod_linux.dll in the garrysmod/lua/bin folder.
 * Step 5: Profit
