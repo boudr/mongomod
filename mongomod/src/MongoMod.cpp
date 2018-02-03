@@ -2,25 +2,10 @@
 
 using namespace GarrysMod::Lua;
 
-using mongo::BSONObjBuilder;
-using mongo::BSONObj;
-
 #define CONNECTION "Connection"
 
 //Connection iType ID. Returned from created the new meta table of type CONNECTION
 int ConTypeID;
-
-int TableScanRef;
-
-//Used to concat the database and collection into one c string
-char* concatDB(const char* a, const char* b){
-    char* final = new char[strlen(a) + strlen(b) + 2];
-    strcpy(final, a);
-    strcat(final, ".");
-    strcat(final, b);
-
-    return final;
-}
 
 //Pass a stack position for a table and this function will build a BSONObj that is query ready.
 BSONObj query_builder(ILuaBase* LUA, int iStackPos, bool update=false){
@@ -172,7 +157,7 @@ LUA_FUNCTION(New){
     Connection* c = new Connection();
 
     if(!c){
-        printf("\nThis is failing\n");
+        printf("\nUnable to create the object\n");
         return 0;
     }else{
         //Push UserType connection and the connection object to the stack.
@@ -248,7 +233,7 @@ LUA_FUNCTION(Insert){
 
     LUA->CheckString(2);
 
-    const char* collection = LUA->GetString(2);
+    string collection(LUA->GetString(2));
 
     LUA->CheckType(3, Type::TABLE);
 
@@ -256,16 +241,12 @@ LUA_FUNCTION(Insert){
 
     LUA->Pop();
 
-    char* final = concatDB(c->GetActiveDatabase(), collection);
-
-    printf("\n%s\n", final);
-
-    c->Insert(final, b);
+    c->Insert(c->GetActiveDatabase() + "." +collection, b);
 
     return 0;
 }
 
-LUA_FUNCTION( Query ){
+LUA_FUNCTION( Query_ ){
 
     if(!ConTypeID){
         printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
@@ -284,11 +265,7 @@ LUA_FUNCTION( Query ){
 
     LUA->CheckString(2);
 
-    const char* collection = LUA->GetString(2);
-
-    char* final = concatDB(c->GetActiveDatabase(), collection);
-
-    printf("\n%s\n", final);
+    string collection(LUA->GetString(2));
 
     LUA->CheckType(3, Type::TABLE);
 
@@ -298,7 +275,7 @@ LUA_FUNCTION( Query ){
 
     LUA->Pop();
 
-    std::auto_ptr<mongo::DBClientCursor> cursor = c->Query(final, q);
+    auto_ptr<DBClientCursor> cursor = c->Query(c->GetActiveDatabase()+"."+collection, q);
 
     while(cursor->more()){
         elements.push_back(cursor->next());
@@ -327,11 +304,7 @@ LUA_FUNCTION(Update){
 
     LUA->CheckString(2);
 
-    const char* collection = LUA->GetString(2);
-
-    char* final = concatDB(c->GetActiveDatabase(), collection);
-
-    printf("\n%s\n", final);
+    string collection(LUA->GetString(2));
 
     LUA->CheckType(3, Type::TABLE);
 
@@ -343,7 +316,7 @@ LUA_FUNCTION(Update){
 
     BSONObj update = query_builder(LUA, 4, true);
 
-    c->Update(final, q, update);
+    c->Update(c->GetActiveDatabase() + "." + collection, q, update);
 
     return 0;
 }
@@ -380,6 +353,9 @@ GMOD_MODULE_OPEN(){
         LUA->PushCFunction(Disconnect);
         LUA->SetField(-2, "__gc");
 
+        LUA->PushCFunction(Disconnect);
+        LUA->SetField(-2, "disconnect");
+
         //Insert Function
         LUA->PushCFunction(Insert);
         LUA->SetField(-2, "insert");
@@ -387,7 +363,7 @@ GMOD_MODULE_OPEN(){
         LUA->PushCFunction(Connect);
         LUA->SetField(-2, "connect");
 
-        LUA->PushCFunction(Query);
+        LUA->PushCFunction(Query_);
         LUA->SetField(-2, "query");
 
         LUA->PushCFunction(Update);
