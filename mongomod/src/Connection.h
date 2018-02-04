@@ -22,6 +22,7 @@ public:
 	void Insert(string collection, BSONObj b);
 	bool Connect(string ip, string database);
     void Update(string collection, BSONObj q, BSONObj update);
+    void Remove(string collection, BSONObj q, bool justOne);
 	auto_ptr<DBClientCursor> Query(string collection, BSONObj q);
 };
 #endif

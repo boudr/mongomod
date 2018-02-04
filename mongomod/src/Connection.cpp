@@ -36,6 +36,14 @@ void Connection::Update(string collection, BSONObj q, BSONObj update){
     }
 }
 
+void Connection::Remove(string collection, BSONObj q, bool justOne){
+   try{
+       dbc.remove(collection, q, justOne);
+   }catch(DBException &e){
+       printf("\n[MongoMod] ERROR: Remove Failed: %s\n", e.toString().c_str());
+   }
+}
+
 string Connection::GetActiveDatabase(){
 	return database;
 }

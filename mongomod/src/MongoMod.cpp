@@ -321,6 +321,38 @@ LUA_FUNCTION(Update){
     return 0;
 }
 
+LUA_FUNCTION(Remove){
+
+    if(!ConTypeID){
+        printf("\n[MongoMod] ERROR: Connection Type not initialized!\n");
+        return 0;
+    }
+
+    LUA->CheckType(1, ConTypeID);
+
+    ILuaBase::UserData* userdata = (ILuaBase::UserData*) LUA->GetUserdata(1);
+    Connection* c = (Connection*)userdata->data;
+
+    if(!c){
+        printf("\n[MongoMod] ERROR: Connection is invalid! Unable to query on requested database.\n");
+        return 0;
+    }
+
+    LUA->CheckString(2);
+    LUA->CheckType(3, Type::BOOL);
+
+    string collection(LUA->GetString(2));
+    bool justOne = LUA->GetBool(3);
+
+    LUA->CheckType(4, Type::TABLE);
+
+    BSONObj q = query_builder(LUA, 4);
+
+    c->Remove(c->GetActiveDatabase()+"."+ collection, q, justOne);
+
+    return 0;
+}
+
 
 GMOD_MODULE_OPEN(){
 
@@ -368,6 +400,9 @@ GMOD_MODULE_OPEN(){
 
         LUA->PushCFunction(Update);
         LUA->SetField(-2, "update");
+
+        LUA->PushCFunction(Remove);
+        LUA->SetField(-2, "remove");
     }
 
     LUA->Pop();
