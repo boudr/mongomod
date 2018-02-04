@@ -84,3 +84,15 @@ PrintTable(tab)
 
 database:update("players", {banned = true}, {["$set"] = {banned=false}})
 ```
+### Remove:
+```lua
+--Remove a document from a collection.
+--To remove, the table will be the same as query.
+--[[
+	Example:
+	{ banned = true, name="dril" }
+]]--
+--The second argument will be true for just one document mataching the query. false will remove all documents matching the query.
+
+database:remove("players", false, {name = "cplasplas"})
+```
