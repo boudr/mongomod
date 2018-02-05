@@ -4,10 +4,12 @@ solution "mongomod"
 	location ( "build/" .. os.get() .. "-" .. _ACTION )
 	flags { "Symbols", "NoEditAndContinue", "NoPCH", "EnableSSE", "NoImportLib"}
 	targetdir ( "lib/" .. os.get() .. "/" )
-	includedirs {	"mongocxx/include/",
+	includedirs {	"/usr/local/include/mongocxx/v_noabi",
+                    "/usr/local/include/bsoncxx/v_noabi",
+                    "/usr/local/include/libmongoc-1.0",
+                    "/usr/local/include/libbson-1.0",
 					"gmodlua/include/",
-					"mongomod/src/",
-					"boost/include/"
+					"mongomod/src/"
 				 }
 
 	if os.get() == "macosx" or os.get() == "linux" then
@@ -44,7 +46,7 @@ solution "mongomod"
 		defines{ "GMMODULE" }
 		files{ "mongomod/src/**.*" }
 		kind "SharedLib"
-		libdirs { "mongocxx/lib/", "boost/lib/" }
+		libdirs { "/usr/local/lib" }
 		local platform
 		if os.get() == "windows" then
 			error "Unsupported platform."
@@ -60,7 +62,7 @@ solution "mongomod"
 		targetextension(".dll")
 		targetdir("build/lib/" .. os.get())
 		
-		if os.get() == "macosx" or os.get() == "linux" then
-			links { "mongoclient" }
+		if os.get() == "linux" then
+			links { "mongocxx", "bsoncxx" }
 		end
 		

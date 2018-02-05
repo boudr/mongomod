@@ -1,28 +1,28 @@
 #ifndef MONGO_MOD_CONNECTION
 #define MONGO_MOD_CONNECTION
-#include "mongo/client/dbclient.h"
-#include <stdio.h>
-#include <cstdlib>
+#include <iostream>
 
-#include "mongo/bson/bson.h"
+#include<mongocxx/uri.hpp>
+#include<mongocxx/instance.hpp>
+#include<mongocxx/client.hpp>
 #include "GarrysMod/Lua/Interface.h"
+#include <mongocxx/exception/exception.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
 
-using namespace mongo;
 using namespace GarrysMod::Lua;
-using namespace std;
+using namespace bsoncxx;
 
 class Connection {
 private:
-	DBClientConnection dbc;
-
-    string database;
-    string ip;
+    mongocxx::database database;
+    std::string databaseName;
+    std::string ip;
 public:
-	string GetActiveDatabase();
-	void Insert(string collection, BSONObj b);
-	bool Connect(string ip, string database);
-    void Update(string collection, BSONObj q, BSONObj update);
-    void Remove(string collection, BSONObj q, bool justOne);
-	auto_ptr<DBClientCursor> Query(string collection, BSONObj q);
+    std::string GetActiveDatabase();
+	/* void Insert(string collection, BSONObj b); */
+	bool Connect(std::string ip, std::string database);
+    /* void Update(string collection, BSONObj q, BSONObj update); */
+    /* void Remove(string collection, BSONObj q, bool justOne); */
+    mongocxx::cursor Query(std::string collection, builder::basic::document d);
 };
 #endif
