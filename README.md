@@ -6,7 +6,7 @@ Garry's Mod Lua implementation on MongoDB (https://www.mongodb.com)
 
 Please see the release section for the redistribution packages for your respective operating system.
 
-Releases: https://github.com/ceeit0/mongomod/releases
+Releases: https://github.com/boudr/mongomod/releases
 
 If you choose to build this yourself; please see the installation section below.
 
