@@ -2,6 +2,9 @@
 
 Garry's Mod Lua implementation on MongoDB (https://www.mongodb.com)
 
+## Important Note
+I haven't had much time to do a re-write of this project. This master branch uses the legacy driver for MongoDB. While this project does work, it requires a very specific environment and setup. Needless to say, don't use this module. I will eventually do a re-write or just wait for Sandbox to be released and do something similar for that. This was a fun learning experience for stack programming and some deeper C concepts. If you have questions, make an issue and I will try my best to answer. :)
+
 ## Getting Started
 
 Please see the release section for the redistribution packages for your respective operating system.
